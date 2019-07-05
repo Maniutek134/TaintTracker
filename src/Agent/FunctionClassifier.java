@@ -2,11 +2,8 @@ package Agent;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.CtMethod;
-import javassist.NotFoundException;
-
+import com.fasterxml.jackson.annotation.*;
+import javassist.*;
 import java.io.IOException;
 import java.net.URL;
 
@@ -28,6 +25,8 @@ public class FunctionClassifier {
         setSanitizers(readSourcesSinkSanitizer("resources/sanitizers.json"));
         setSources(readSourcesSinkSanitizer("resources/sources.json"));
         setSinks(readSourcesSinkSanitizer("resources/sinks.json"));
+
+        //out.println("dupa");
     }
 
     public String isSourceSinkOrSanitizer(CtClass ctClass, String methodName) {
@@ -158,11 +157,15 @@ public class FunctionClassifier {
 
     public boolean clasify(String className) throws NotFoundException {
 
-        CtClass ctClass = cp.getOrNull(className);
+        CtClass ctClass = getCp().getOrNull(className);
         if(ctClass == null){
             out.println("Cant load class: " + className);
             return false;
         }
+
+//        else{
+//            out.println("loaded class: "+ctClass.getName());
+//        }
 
 
         CtClass temp;
