@@ -26,7 +26,18 @@ public class FunctionClassifier {
         setSources(readSourcesSinkSanitizer("resources/sources.json"));
         setSinks(readSourcesSinkSanitizer("resources/sinks.json"));
 
-        //out.println("dupa");
+    }
+
+    public static boolean isMethodNative(CtMethod method) {
+        return Modifier.isNative(method.getModifiers());
+    }
+
+    public static boolean isMethodStatic(CtMethod method) {
+        return Modifier.isStatic(method.getModifiers());
+    }
+
+    public static boolean isMethodAbstract(CtMethod method) {
+        return Modifier.isAbstract(method.getModifiers());
     }
 
     public String isSourceSinkOrSanitizer(CtClass ctClass, String methodName) {
@@ -101,7 +112,6 @@ public class FunctionClassifier {
         return null;
     }
 
-
     public CtClass classExtendsSourceSinkOrSanitizer(CtClass ctClass) {
         try {
             CtClass superClass = ctClass.getSuperclass();
@@ -128,9 +138,6 @@ public class FunctionClassifier {
         }
         return null;
     }
-
-
-
 
     public CtClass classImplementsSourceSinkOrSanitizer(CtClass ctClass){
 

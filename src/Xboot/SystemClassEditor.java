@@ -1,10 +1,11 @@
 package Xboot;
 
-import Agent.Taintable;
-import Agent.FunctionClassifier.*;
+import Agent.*;
 import javassist.*;
 
 import java.io.IOException;
+
+import static Agent.FunctionClassifier.*;
 
 public class SystemClassEditor {
     public static void main(String[] args) {
@@ -58,6 +59,30 @@ public class SystemClassEditor {
         cClass.addMethod(CtMethod.make("public void setTaint(boolean value, String className){ this.tainted = value; if(className != null) this.taintSource = className; }", cClass));
         cClass.addMethod(CtMethod.make("public boolean isTainted(){ return this.tainted; }", cClass));
         cClass.addMethod(CtMethod.make("public String getTaintSource(){ return this.taintSource; }", cClass));
+        cClass.addMethod(CtMethod.make("public String setTaintSource(String taintSource){ this.taintSource = taintSource; }", cClass));
+    }
+
+    private void propagateTaintInMethods(CtClass cClass) throws NotFoundException, CannotCompileException {
+        CtMethod[] cMethods = cClass.getDeclaredMethods();
+        for (CtMethod cMethod : cMethods) {
+            if (!isMethodStatic(cMethod) &&
+                    !isMethodNative(cMethod) &&
+                    !isMethodAbstract(cMethod) &&
+                    !cMethod.getName().equals("setTaint") &&
+                    !cMethod.getName().equals("isTainted") &&
+                    !cMethod.getName().equals("setTaintSource") &&
+                    !cMethod.getName().equals("getTaintSource")) {
+
+                CtClass returnType = cMethod.getReturnType();
+                if (returnType.subtypeOf(ClassPool.getDefault().get(Taintable.class.getName()))) {
+                    cMethod.insertAfter("{ Object ret = TaintUtils.propagateParameterTaintObject($0, $args); if(ret != null) $_.setTaint(TaintUtils.isTainted(ret), TaintUtils.getTaintSource(ret)); }");
+                }
+
+                if (cMethod.getParameterTypes().length > 0) {
+                    cMethod.insertBefore("{ Object ret = TaintUtils.propagateParameterTaintObject($0, $args); if(ret != null) $0.setTaint(TaintUtils.isTainted(ret), TaintUtils.getTaintSource(ret)); }");
+                }
+            }
+        }
     }
 
     private void write(CtClass ctClass){
