@@ -6,6 +6,9 @@ import javassist.*;
 import java.io.IOException;
 
 import static Agent.FunctionClassifier.*;
+import static Agent.TaintPropagationHandler.*;
+import static Agent.TaintHandler.*;
+
 
 public class SystemClassEditor {
     public static void main(String[] args) {
@@ -28,14 +31,17 @@ public class SystemClassEditor {
     private void edit() throws NotFoundException, CannotCompileException, IOException {
         ClassPool cp = ClassPool.getDefault();
 
-        write(addTaintableToClass(cp, "java.lang.String"));
-        write(addTaintableToClass(cp, "java.lang.StringBuffer"));
-        write(addTaintableToClass(cp, "java.lang.StringBuilder"));
+        cp.importPackage(TaintPropagationHandler.class.getName());
+        cp.importPackage(TaintHandler.class.getName());
+
+        write(addTainableToClass(cp, "java.lang.String"));
+        write(addTainableToClass(cp, "java.lang.StringBuffer"));
+        write(addTainableToClass(cp, "java.lang.StringBuilder"));
 
 
     }
 
-    private CtClass addTaintableToClass(ClassPool cp, String className) throws NotFoundException, CannotCompileException, IOException {
+    private CtClass addTainableToClass(ClassPool cp, String className) throws NotFoundException, CannotCompileException, IOException {
         CtClass cClass = cp.get(className);
         cClass.defrost();
 
@@ -43,7 +49,7 @@ public class SystemClassEditor {
 
         addTaintField(cClass);
         addTaintMethods(cClass);
-//        propagateTaintInMethods(cClass);
+        propagateTaintInMethods(cClass);
 //        propagatingDataTypes.put(className, cClass);
 //        writeClass(cp, className);
 
@@ -59,8 +65,9 @@ public class SystemClassEditor {
         cClass.addMethod(CtMethod.make("public void setTaint(boolean value, String className){ this.tainted = value; if(className != null) this.taintSource = className; }", cClass));
         cClass.addMethod(CtMethod.make("public boolean isTainted(){ return this.tainted; }", cClass));
         cClass.addMethod(CtMethod.make("public String getTaintSource(){ return this.taintSource; }", cClass));
-        cClass.addMethod(CtMethod.make("public String setTaintSource(String taintSource){ this.taintSource = taintSource; }", cClass));
+        cClass.addMethod(CtMethod.make("public void setTaintSource(String taintSource){ this.taintSource = taintSource; }", cClass));
     }
+
 
     private void propagateTaintInMethods(CtClass cClass) throws NotFoundException, CannotCompileException {
         CtMethod[] cMethods = cClass.getDeclaredMethods();
@@ -75,11 +82,11 @@ public class SystemClassEditor {
 
                 CtClass returnType = cMethod.getReturnType();
                 if (returnType.subtypeOf(ClassPool.getDefault().get(Taintable.class.getName()))) {
-                    cMethod.insertAfter("{ Object ret = TaintUtils.propagateParameterTaintObject($0, $args); if(ret != null) $_.setTaint(TaintUtils.isTainted(ret), TaintUtils.getTaintSource(ret)); }");
+                    cMethod.insertAfter("{ Object ret = TaintPropagationHandler.propagateParameterTaintObject($0, $args); if(ret != null) $_.setTaint(true, TaintPropagationHandler.getTaintSource(ret)); }");
                 }
 
                 if (cMethod.getParameterTypes().length > 0) {
-                    cMethod.insertBefore("{ Object ret = TaintUtils.propagateParameterTaintObject($0, $args); if(ret != null) $0.setTaint(TaintUtils.isTainted(ret), TaintUtils.getTaintSource(ret)); }");
+                    cMethod.insertBefore("{ Object ret = TaintPropagationHandler.propagateParameterTaintObject($0, $args); if(ret != null) $0.setTaint(true, TaintPropagationHandler.getTaintSource(ret)); }");
                 }
             }
         }
