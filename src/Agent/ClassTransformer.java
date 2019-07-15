@@ -29,12 +29,13 @@ class ClassTransformer implements ClassFileTransformer {
         cp = ClassPool.getDefault();
         cp.appendClassPath(new LoaderClassPath(loader));
 
-
         FunctionClassifier fc = new FunctionClassifier(cp);
 
         try {
             fc.clasify(className);
         } catch (NotFoundException e) {
+            e.printStackTrace();
+        } catch (CannotCompileException e) {
             e.printStackTrace();
         }
 

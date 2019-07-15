@@ -18,12 +18,10 @@ public class SourceSinkSanitizer {
     }
 
     public Boolean isMethodInClasses(String className, String methodName) {
-        //out.println(className);
         return getaBoolean(className, methodName,  classes);
     }
 
     public Boolean isMethodInInterface(String className, String methodName) {
-        //out.println(className);
         return getaBoolean(className, methodName, interfaces);
     }
 
@@ -89,5 +87,15 @@ class ClassGroup{
 
     public void setDescriptor(String descriptor) {
         this.descriptor = descriptor;
+    }
+
+    public boolean isMethodInMethods(String method){
+        for (String meth : methods){
+            if(meth.equals(method)){
+                return true;
+            }
+        }
+
+        return false;
     }
 }

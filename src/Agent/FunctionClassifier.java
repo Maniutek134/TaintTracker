@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.*;
 import javassist.*;
 import java.io.IOException;
 import java.net.URL;
+import java.util.List;
 
 import static java.lang.System.out;
 
@@ -21,10 +22,11 @@ public class FunctionClassifier {
     public FunctionClassifier(ClassPool cp) {
 
         this.cp = cp;
-
+        out.println("dupa");
         setSanitizers(readSourcesSinkSanitizer("resources/sanitizers.json"));
         setSources(readSourcesSinkSanitizer("resources/sources.json"));
         setSinks(readSourcesSinkSanitizer("resources/sinks.json"));
+        //todo do something with the mess connected to those jsons!!!
 
     }
 
@@ -40,36 +42,57 @@ public class FunctionClassifier {
         return Modifier.isAbstract(method.getModifiers());
     }
 
-    public String isSourceSinkOrSanitizer(CtClass ctClass, String methodName) {
+    public void isSourceSinkOrSanitizer(CtClass ctClass, CtClass alterClass, CtMethod ctMethod) throws NotFoundException, CannotCompileException {
 
+//        List<ClassGroup> sources;
+//        List<ClassGroup> sinks;
+//        List<ClassGroup> sanitizers;
+//
+//        if(!ctClass.isInterface()){
+//            sources = this.sources.getInterfaces();
+//            sinks = this.sinks.getInterfaces();
+//            sanitizers = this.sanitizers.getInterfaces();
+//        }
+//        else{
+//            sources = this.sources.getClasses();
+//            sinks = this.sinks.getClasses();
+//            sanitizers = this.sanitizers.getClasses();
+//        }
+//
+//        if(sources.)
+        CtClass returnType = ctMethod.getReturnType();
 
-        if (!ctClass.isInterface()) {
-            if (sources.isMethodInClasses(ctClass.getName(), methodName)) {
-                return "\t" + methodName + ": source\n";
-            }
+        if (sources.isMethodInClasses(alterClass.getName(), ctMethod.getName()) ||
+                sources.isMethodInInterface(alterClass.getName(), ctMethod.getName())){
 
-            if (sinks.isMethodInClasses(ctClass.getName(), methodName)) {
-                return "\t" + methodName + ": sink\n";
-            }
+            if (returnType.subtypeOf(cp.get(Taintable.class.getName()))){
+                cp.importPackage(TaintHandler.class.getName());
+                cp.importPackage(TaintPropagationHandler.class.getName());
 
-            if (sanitizers.isMethodInClasses(ctClass.getName(), methodName)) {
-                return "\t" + methodName + ": sanitizer\n";
+                if(!isMethodStatic(ctMethod)){
+                    ctMethod.insertAfter("{ TaintPropagation.addTaintToMethod($0, $_, \"" + ctClass.getName() + "\"); }");
+                }
+                else {
+                    ctMethod.insertAfter("{ TaintUtils.addTaintToMethod(null, $_, \"" + ctClass.getName() + "\"); }");
+                }
+                out.println("\t\tSource Defined");
             }
-        } else {
-            if (sources.isMethodInInterface(ctClass.getName(), methodName)) {
-                return "\t" + methodName + ": source\n";
-            }
+            out.println("\t\t Untaintable return type: " + returnType.getName());
 
-            if (sinks.isMethodInInterface(ctClass.getName(), methodName)) {
-                return "\t" + methodName + ": sink\n";
-            }
-
-            if (sanitizers.isMethodInInterface(ctClass.getName(), methodName)) {
-                return "\t" + methodName + ": sanitizer\n";
-            }
         }
 
-        return "";
+        if (sinks.isMethodInClasses(alterClass.getName(), ctMethod.getName()) ||
+                sinks.isMethodInInterface(alterClass.getName(), ctMethod.getName())){
+
+        }
+
+        if (sanitizers.isMethodInClasses(alterClass.getName(), ctMethod.getName()) ||
+                sanitizers.isMethodInInterface(alterClass.getName(), ctMethod.getName())){
+
+        }
+
+
+        //return "";
     }
 
     public SourceSinkSanitizer readSourcesSinkSanitizer(String fileName) {
@@ -88,15 +111,18 @@ public class FunctionClassifier {
         return sourceSinkSanitizer;
     }
 
-    public Boolean transform(CtClass ctClass, CtClass alterClass) throws NotFoundException {
+    public Boolean transform(CtClass ctClass, CtClass alterClass) throws NotFoundException, CannotCompileException {
 
 
         CtMethod[] methods = ctClass.getDeclaredMethods();
-        for (CtMethod method : methods) {
-            //out.println(method.getName());
-            out.print(isSourceSinkOrSanitizer(alterClass, method.getName()));
+        if(methods.length >0){
+            for (CtMethod method : methods) {
+                out.println(method.getName());
+                if(!isMethodNative(method) && !isMethodAbstract(method)){
+                    isSourceSinkOrSanitizer(ctClass,alterClass, method);
+                }
+            }
         }
-
         return true;
     }
 
@@ -162,7 +188,7 @@ public class FunctionClassifier {
 
     }
 
-    public boolean clasify(String className) throws NotFoundException {
+    public boolean clasify(String className) throws NotFoundException, CannotCompileException {
 
         CtClass ctClass = getCp().getOrNull(className);
         if(ctClass == null){
@@ -174,7 +200,6 @@ public class FunctionClassifier {
 //            out.println("loaded class: "+ctClass.getName());
 //        }
 
-
         CtClass temp;
 
         if(null != (temp = classSourceSinkOrSanitizer(ctClass))) {
@@ -182,7 +207,6 @@ public class FunctionClassifier {
         }else if(null != (temp = classImplementsSourceSinkOrSanitizer(ctClass))){
                 transform(ctClass, temp);
         }else if(null != (temp = classExtendsSourceSinkOrSanitizer(ctClass))){
-                //out.println(ctClass.getName());
                 transform(ctClass, temp);
         }
 

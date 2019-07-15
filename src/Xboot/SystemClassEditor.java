@@ -33,6 +33,7 @@ public class SystemClassEditor {
 
         cp.importPackage(TaintPropagationHandler.class.getName());
         cp.importPackage(TaintHandler.class.getName());
+        //cp.importPackage(Taintable.class.getName());
 
         write(addTainableToClass(cp, "java.lang.String"));
         write(addTainableToClass(cp, "java.lang.StringBuffer"));
