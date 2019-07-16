@@ -22,12 +22,12 @@ public class FunctionClassifier {
     public FunctionClassifier(ClassPool cp) {
 
         this.cp = cp;
-        out.println("dupa");
+        //out.println("dupa1");
         setSanitizers(readSourcesSinkSanitizer("resources/sanitizers.json"));
         setSources(readSourcesSinkSanitizer("resources/sources.json"));
         setSinks(readSourcesSinkSanitizer("resources/sinks.json"));
         //todo do something with the mess connected to those jsons!!!
-
+        //out.println("dupa2");
     }
 
     public static boolean isMethodNative(CtMethod method) {
@@ -44,22 +44,7 @@ public class FunctionClassifier {
 
     public void isSourceSinkOrSanitizer(CtClass ctClass, CtClass alterClass, CtMethod ctMethod) throws NotFoundException, CannotCompileException {
 
-//        List<ClassGroup> sources;
-//        List<ClassGroup> sinks;
-//        List<ClassGroup> sanitizers;
-//
-//        if(!ctClass.isInterface()){
-//            sources = this.sources.getInterfaces();
-//            sinks = this.sinks.getInterfaces();
-//            sanitizers = this.sanitizers.getInterfaces();
-//        }
-//        else{
-//            sources = this.sources.getClasses();
-//            sinks = this.sinks.getClasses();
-//            sanitizers = this.sanitizers.getClasses();
-//        }
-//
-//        if(sources.)
+
         CtClass returnType = ctMethod.getReturnType();
 
         if (sources.isMethodInClasses(alterClass.getName(), ctMethod.getName()) ||
@@ -69,15 +54,26 @@ public class FunctionClassifier {
                 cp.importPackage(TaintHandler.class.getName());
                 cp.importPackage(TaintPropagationHandler.class.getName());
 
+                out.println();
+                out.println("method name: "+ctMethod.getName());
+                out.println("returned type: "+returnType.getName());
+
+
                 if(!isMethodStatic(ctMethod)){
-                    ctMethod.insertAfter("{ TaintPropagation.addTaintToMethod($0, $_, \"" + ctClass.getName() + "\"); }");
+                    ctMethod.insertAfter("{ Agent.TaintPropagationHandler.addTaintToMethod($0, $_, \"" + ctClass.getName() + "\"); }");
+                    //ctMethod.insertAfter(("{ System.out.println(\""+TaintPropagationHandler.class.getName()+"\"); }"));
+                    out.println("not static");
                 }
                 else {
-                    ctMethod.insertAfter("{ TaintUtils.addTaintToMethod(null, $_, \"" + ctClass.getName() + "\"); }");
+                    ctMethod.insertAfter("{ Agent.TaintPropagationHandler.addTaintToMethod(null, $_, \"" + ctClass.getName() + "\"); }");
+                    //ctMethod.insertAfter(("{ System.out.println(\""+TaintPropagationHandler.addTaintToMethod().;+"\"); }"));
+                    out.println("static");
                 }
-                out.println("\t\tSource Defined");
+                out.println("Source Defined");
             }
-            out.println("\t\t Untaintable return type: " + returnType.getName());
+            else {
+                out.println("\nUntaintable return type: " + returnType.getName());
+            }
 
         }
 
@@ -97,6 +93,7 @@ public class FunctionClassifier {
 
     public SourceSinkSanitizer readSourcesSinkSanitizer(String fileName) {
         URL fileUrl = ClassLoader.getSystemClassLoader().getResource(fileName);
+        //out.println(fileUrl);
         ObjectMapper mapper = new ObjectMapper();
         SourceSinkSanitizer sourceSinkSanitizer = new SourceSinkSanitizer();
         //out.println(fileUrl);
@@ -117,7 +114,6 @@ public class FunctionClassifier {
         CtMethod[] methods = ctClass.getDeclaredMethods();
         if(methods.length >0){
             for (CtMethod method : methods) {
-                out.println(method.getName());
                 if(!isMethodNative(method) && !isMethodAbstract(method)){
                     isSourceSinkOrSanitizer(ctClass,alterClass, method);
                 }

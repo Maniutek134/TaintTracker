@@ -8,7 +8,7 @@ public class JavaAgent  {
 
     public static void premain(String agentArgs, Instrumentation inst) throws IOException, NoSuchFieldException, NoSuchMethodException {
         out.println("Executing taint premain...........");
-        out.println(String.class.getDeclaredMethod("isTainted").getName());
+        //out.println(String.class.getDeclaredMethod("isTainted").getName());
         out.println();
         ClassTransformer transformer = new ClassTransformer();
         //out.println("dupa");
