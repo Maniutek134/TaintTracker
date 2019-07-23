@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.annotation.*;
 import javassist.*;
+
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
@@ -22,12 +23,11 @@ public class FunctionClassifier {
     public FunctionClassifier(ClassPool cp) {
 
         this.cp = cp;
-        //out.println("dupa1");
+
         setSanitizers(readSourcesSinkSanitizer("resources/sanitizers.json"));
         setSources(readSourcesSinkSanitizer("resources/sources.json"));
         setSinks(readSourcesSinkSanitizer("resources/sinks.json"));
-        //todo do something with the mess connected to those jsons!!!
-        //out.println("dupa2");
+
     }
 
     public static boolean isMethodNative(CtMethod method) {
@@ -47,25 +47,30 @@ public class FunctionClassifier {
 
         CtClass returnType = ctMethod.getReturnType();
 
+        cp.importPackage(TaintHandler.class.getName());
+        cp.importPackage(TaintPropagationHandler.class.getName());
+        //cp.importPackage(java.util.logging.Logger.class.getName());
+
         if (sources.isMethodInClasses(alterClass.getName(), ctMethod.getName()) ||
                 sources.isMethodInInterface(alterClass.getName(), ctMethod.getName())){
 
             if (returnType.subtypeOf(cp.get(Taintable.class.getName()))){
-                cp.importPackage(TaintHandler.class.getName());
-                cp.importPackage(TaintPropagationHandler.class.getName());
+
 
                 out.println();
+                out.println("class name: "+ctClass.getName());
                 out.println("method name: "+ctMethod.getName());
                 out.println("returned type: "+returnType.getName());
 
 
                 if(!isMethodStatic(ctMethod)){
-                    ctMethod.insertAfter("{ Agent.TaintPropagationHandler.addTaintToMethod($0, $_, \"" + ctClass.getName() + "\"); }");
+                    ctMethod.insertAfter("{ System.out.println(\"source activated\"); }");
+                    //ctMethod.insertAfter("{ throw new ArithmeticException(\"hjvgfgf\"); }");
                     //ctMethod.insertAfter(("{ System.out.println(\""+TaintPropagationHandler.class.getName()+"\"); }"));
                     out.println("not static");
                 }
                 else {
-                    ctMethod.insertAfter("{ Agent.TaintPropagationHandler.addTaintToMethod(null, $_, \"" + ctClass.getName() + "\"); }");
+                    ctMethod.insertAfter("{ System.out.println(\"source activated\"); }");
                     //ctMethod.insertAfter(("{ System.out.println(\""+TaintPropagationHandler.addTaintToMethod().;+"\"); }"));
                     out.println("static");
                 }
@@ -75,11 +80,25 @@ public class FunctionClassifier {
                 out.println("\nUntaintable return type: " + returnType.getName());
             }
 
-        }
+        }else if (sinks.isMethodInClasses(alterClass.getName(), ctMethod.getName()) ||
+                sinks.isMethodInInterface(alterClass.getName(), ctMethod.getName())) {
 
-        if (sinks.isMethodInClasses(alterClass.getName(), ctMethod.getName()) ||
-                sinks.isMethodInInterface(alterClass.getName(), ctMethod.getName())){
+            out.println();
+            out.println("class name: "+ctClass.getName());
+            out.println("method name: " + ctMethod.getName());
+            out.println("returned type: " + returnType.getName());
 
+            if (!isMethodStatic(ctMethod)) {
+                //ctMethod.insertBefore("{ System.out.println(\"sink activated\"); }");
+                ctMethod.insertBefore("{ throw new ArithmeticException(\"zxccz\"); }");
+                //ctMethod.insertAfter(("{ System.out.println(\""+TaintPropagationHandler.class.getName()+"\"); }"));
+                out.println("not static");
+            } else {
+                ctMethod.insertBefore("{ System.out.println(\"sink activated\"); }");
+                //ctMethod.insertAfter(("{ System.out.println(\""+TaintPropagationHandler.addTaintToMethod().;+"\"); }"));
+                out.println("static");
+            }
+            out.println("Sink Defined");
         }
 
         if (sanitizers.isMethodInClasses(alterClass.getName(), ctMethod.getName()) ||
@@ -161,23 +180,29 @@ public class FunctionClassifier {
         return null;
     }
 
-    public CtClass classImplementsSourceSinkOrSanitizer(CtClass ctClass){
+    public CtClass classImplementsSourceSinkOrSanitizer(CtClass ctClass) {
 
         CtClass[] interfaces;
+
+        //out.println("class: " + ctClass.getName());
 
         try {
             interfaces = ctClass.getInterfaces();
 
             if(interfaces.length > 0){
                 for(CtClass interElement: interfaces){
-                    if(sinks.isClassInInterfaces(interElement.getName())){
+                    if(sources.isClassInInterfaces(interElement.getName())){
+                        return interElement;
+                    }else if(sinks.isClassInInterfaces(interElement.getName())){
+                        return interElement;
+                    }else if(sanitizers.isClassInInterfaces(interElement.getName())){
                         return interElement;
                     }
                 }
-            }
+           }
 
         } catch (NotFoundException e) {
-            //ignore
+//            //ignore
         }
 
         return null;
@@ -192,9 +217,9 @@ public class FunctionClassifier {
             return false;
         }
 
-//        else{
-//            out.println("loaded class: "+ctClass.getName());
-//        }
+        else{
+            out.println("Loaded class: " +ctClass.getName());
+        }
 
         CtClass temp;
 

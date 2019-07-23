@@ -6,12 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.lang.instrument.ClassFileTransformer;
 import java.security.ProtectionDomain;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
 
-import static java.lang.System.*;
+
 
 class ClassTransformer implements ClassFileTransformer {
     @Override
@@ -38,6 +34,7 @@ class ClassTransformer implements ClassFileTransformer {
         } catch (CannotCompileException e) {
             e.printStackTrace();
         }
+
 
 
         return byteCode;

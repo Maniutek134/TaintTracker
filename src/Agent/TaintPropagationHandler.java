@@ -1,6 +1,7 @@
 package Agent;
 
 import static Agent.TaintHandler.*;
+import static java.lang.System.out;
 
 public class TaintPropagationHandler {
 
@@ -37,9 +38,10 @@ public class TaintPropagationHandler {
         if (ret != null) taint(ret, className);
     }
 
-    public static void assertNonTaint(Object s, Object[] args, String className) {
-        if (s != null) checkTaint(s, className);
-        for (Object arg : args) checkTaint(arg, className);
+    public static void assertNonTaint() {
+        //if (s != null) checkTaint(s, className);
+        //for (Object arg : args) checkTaint(arg, className);
+        out.println("checking");
     }
 
     public static void detaintMethodReturn(Object ret) {
