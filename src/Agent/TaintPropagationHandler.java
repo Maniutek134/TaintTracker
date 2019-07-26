@@ -33,9 +33,9 @@ public class TaintPropagationHandler {
         return null;
     }
 
-    public static void addTaintToMethod(Object s, Object ret, String className) {
-        if (s != null) taint(s, className);
-        if (ret != null) taint(ret, className);
+    public static void addTaintToMethod(/*Object s, Object ret, String className*/) {
+//        if (s != null) taint(s, className);
+//        if (ret != null) taint(ret, className);
     }
 
     public static void assertNonTaint() {

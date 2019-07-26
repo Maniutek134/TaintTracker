@@ -32,10 +32,12 @@ class ClassTransformer implements ClassFileTransformer {
 
         try {
             returnedClass = fc.clasify(className);
-            //return returnedClass.toBytecode();
+            return returnedClass.toBytecode();
         } catch (NotFoundException e) {
             e.printStackTrace();
         } catch (CannotCompileException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
