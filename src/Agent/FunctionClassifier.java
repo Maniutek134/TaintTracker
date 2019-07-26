@@ -42,39 +42,37 @@ public class FunctionClassifier {
         return Modifier.isAbstract(method.getModifiers());
     }
 
-    public void isSourceSinkOrSanitizer(CtClass ctClass, CtClass alterClass, CtMethod ctMethod) throws NotFoundException, CannotCompileException {
+    public CtMethod isSourceSinkOrSanitizer(CtClass ctClass, CtClass alterClass, CtMethod ctMethod) throws NotFoundException, CannotCompileException {
 
 
         CtClass returnType = ctMethod.getReturnType();
 
         cp.importPackage(TaintHandler.class.getName());
         cp.importPackage(TaintPropagationHandler.class.getName());
-        //cp.importPackage(java.util.logging.Logger.class.getName());
+        //cp.importPackage(java.util.logging.Logger.class.getName())
 
         if (sources.isMethodInClasses(alterClass.getName(), ctMethod.getName()) ||
                 sources.isMethodInInterface(alterClass.getName(), ctMethod.getName())){
-
             if (returnType.subtypeOf(cp.get(Taintable.class.getName()))){
 
 
                 out.println();
+                out.println("altered name: "+alterClass.getName());
                 out.println("class name: "+ctClass.getName());
                 out.println("method name: "+ctMethod.getName());
                 out.println("returned type: "+returnType.getName());
 
 
                 if(!isMethodStatic(ctMethod)){
-                    ctMethod.insertAfter("{ System.out.println(\"source activated\"); }");
-                    //ctMethod.insertAfter("{ throw new ArithmeticException(\"hjvgfgf\"); }");
-                    //ctMethod.insertAfter(("{ System.out.println(\""+TaintPropagationHandler.class.getName()+"\"); }"));
+                    ctMethod.insertAfter("{ System.out.println(\"source: \" + \""+ ctMethod.getName()+"\"); }");
                     out.println("not static");
                 }
                 else {
-                    ctMethod.insertAfter("{ System.out.println(\"source activated\"); }");
-                    //ctMethod.insertAfter(("{ System.out.println(\""+TaintPropagationHandler.addTaintToMethod().;+"\"); }"));
+                    ctMethod.insertAfter("{ System.out.println(\"source: \" + \""+ ctMethod.getName()+"\"); }");
                     out.println("static");
                 }
                 out.println("Source Defined");
+                out.println();
             }
             else {
                 out.println("\nUntaintable return type: " + returnType.getName());
@@ -83,22 +81,22 @@ public class FunctionClassifier {
         }else if (sinks.isMethodInClasses(alterClass.getName(), ctMethod.getName()) ||
                 sinks.isMethodInInterface(alterClass.getName(), ctMethod.getName())) {
 
-            out.println();
-            out.println("class name: "+ctClass.getName());
-            out.println("method name: " + ctMethod.getName());
-            out.println("returned type: " + returnType.getName());
-
-            if (!isMethodStatic(ctMethod)) {
-                //ctMethod.insertBefore("{ System.out.println(\"sink activated\"); }");
-                ctMethod.insertBefore("{ throw new ArithmeticException(\"zxccz\"); }");
-                //ctMethod.insertAfter(("{ System.out.println(\""+TaintPropagationHandler.class.getName()+"\"); }"));
-                out.println("not static");
-            } else {
-                ctMethod.insertBefore("{ System.out.println(\"sink activated\"); }");
-                //ctMethod.insertAfter(("{ System.out.println(\""+TaintPropagationHandler.addTaintToMethod().;+"\"); }"));
-                out.println("static");
-            }
-            out.println("Sink Defined");
+//            out.println();
+//            out.println("altered name: "+alterClass.getName());
+//            out.println("class name: "+ctClass.getName());
+//            out.println("method name: " + ctMethod.getName());
+//            out.println("returned type: " + returnType.getName());
+//
+//            if (!isMethodStatic(ctMethod)) {
+//                ctMethod.insertBefore("{ System.out.println(\"sink: \" + \""+ ctMethod.getName()+"\"); }");
+//                out.println("not static");
+//            } else {
+//                ctMethod.insertBefore("{ System.out.println(\"sink: \" + \""+ ctMethod.getName()+"\"); }");
+//                out.println("static");
+//            }
+//            out.println("Sink Defined");
+//            out.println();
+//            return ctMethod;
         }
 
         if (sanitizers.isMethodInClasses(alterClass.getName(), ctMethod.getName()) ||
@@ -106,8 +104,8 @@ public class FunctionClassifier {
 
         }
 
-
-        //return "";
+        //ctClass.writeFile();
+        return ctMethod;
     }
 
     public SourceSinkSanitizer readSourcesSinkSanitizer(String fileName) {
@@ -127,9 +125,9 @@ public class FunctionClassifier {
         return sourceSinkSanitizer;
     }
 
-    public Boolean transform(CtClass ctClass, CtClass alterClass) throws NotFoundException, CannotCompileException {
+    public CtClass transform(CtClass ctClass, CtClass alterClass) throws NotFoundException, CannotCompileException {
 
-
+        CtMethod ret;
         CtMethod[] methods = ctClass.getDeclaredMethods();
         if(methods.length >0){
             for (CtMethod method : methods) {
@@ -138,7 +136,7 @@ public class FunctionClassifier {
                 }
             }
         }
-        return true;
+        return ctClass;
     }
 
     public CtClass classSourceSinkOrSanitizer(CtClass ctClass) {
@@ -209,29 +207,33 @@ public class FunctionClassifier {
 
     }
 
-    public boolean clasify(String className) throws NotFoundException, CannotCompileException {
+    public CtClass clasify(String className) throws NotFoundException, CannotCompileException {
 
         CtClass ctClass = getCp().getOrNull(className);
         if(ctClass == null){
             out.println("Cant load class: " + className);
-            return false;
+            return ctClass;
         }
 
         else{
-            out.println("Loaded class: " +ctClass.getName());
+            //out.println("Loaded class: " +ctClass.getName());
         }
 
-        CtClass temp;
+
+        CtClass temp, ret;
 
         if(null != (temp = classSourceSinkOrSanitizer(ctClass))) {
-            transform(ctClass, temp);
+            ret = transform(ctClass, temp);
+            return ret;
         }else if(null != (temp = classImplementsSourceSinkOrSanitizer(ctClass))){
-                transform(ctClass, temp);
+            ret = transform(ctClass, temp);
+            return ret;
         }else if(null != (temp = classExtendsSourceSinkOrSanitizer(ctClass))){
-                transform(ctClass, temp);
+            ret  = transform(ctClass, temp);
+            return ret;
         }
 
-        return true;
+        return ctClass;
     }
 
     public void setSanitizers(SourceSinkSanitizer sanitizers) {

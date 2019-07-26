@@ -4,6 +4,7 @@ import javassist.*;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
 import java.lang.instrument.ClassFileTransformer;
 import java.security.ProtectionDomain;
 
@@ -27,14 +28,16 @@ class ClassTransformer implements ClassFileTransformer {
 
         FunctionClassifier fc = new FunctionClassifier(cp);
 
+        CtClass returnedClass;
+
         try {
-            fc.clasify(className);
+            returnedClass = fc.clasify(className);
+            //return returnedClass.toBytecode();
         } catch (NotFoundException e) {
             e.printStackTrace();
         } catch (CannotCompileException e) {
             e.printStackTrace();
         }
-
 
 
         return byteCode;
