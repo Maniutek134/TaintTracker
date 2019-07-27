@@ -23,8 +23,11 @@ class ClassTransformer implements ClassFileTransformer {
 
         byte[] byteCode = classfileBuffer;
         ClassPool cp;
+
         cp = ClassPool.getDefault();
         cp.appendClassPath(new LoaderClassPath(loader));
+        //System.out.println(classPathLoader.toString());
+        //cp.insertClassPath(new ClassClassPath(this.getClass()));
 
         FunctionClassifier fc = new FunctionClassifier(cp);
 

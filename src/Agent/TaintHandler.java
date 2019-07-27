@@ -22,9 +22,10 @@ public class TaintHandler {
         return s instanceof Taintable && ((Taintable) s).isTainted();
     }
 
-    public static void checkTaint(Object s, String classname){
+    public static void checkTaint(Object s, String classname, String methodName){
         if(isTainted(s)){
             out.println("Tainted value sent without sanitarization");
+            out.println(methodName+"\n");
         }
     }
 }

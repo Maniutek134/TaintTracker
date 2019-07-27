@@ -58,7 +58,7 @@ public class SystemClassEditor {
     }
 
     private void addTaintField(CtClass cClass) throws CannotCompileException {
-        cClass.addField(CtField.make("private boolean tainted;", cClass));//, "TaintUtils.propagateParameterTaint($0, $args)");
+        cClass.addField(CtField.make("private boolean tainted;", cClass), "TaintPropagationHandler.propagateParameterTaint($0, $args)");
         cClass.addField(CtField.make("private String taintSource;", cClass));
     }
 
