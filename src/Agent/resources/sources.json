@@ -1,6 +1,13 @@
 {
   "classes": [
     {
+      "clazz": "org.apache.tomcat.util.http.Parameters",
+      "methods": [
+        "getParameter"
+      ],
+      "descriptor": ""
+    },
+    {
       "clazz": "javax.servlet.GenericServlet",
       "methods": [
         "getInitParameter",
@@ -104,6 +111,7 @@
         "getMethod",
         "getPathInfo",
         "getPathTranslated",
+        "getParameter",
         "getContextPath",
         "getQueryString",
         "getRemoteUser",

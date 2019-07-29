@@ -69,13 +69,11 @@ public class FunctionClassifier {
 
                 if(!isMethodStatic(ctMethod)){
                     ctMethod.insertAfter("{ Agent.TaintPropagationHandler.addTaintToMethod($0, $_, \"" + ctClass.getName() + "\"); }");
-                    ctMethod.insertAfter("{ System.out.println(\"scource activated\")}");
-                    out.println("not static");
-
+                    //ctMethod.insertAfter("{ System.out.println(\"scource activated\");}");
                 }
                 else {
                     ctMethod.insertAfter("{ Agent.TaintPropagationHandler.addTaintToMethod(null, $_, \"" + ctClass.getName() + "\"); }");
-                    out.println("static");
+                    //ctMethod.insertAfter("{ System.out.println(\"scource activated\");}");
                 }
                 out.println("Source Defined\n");
             }
@@ -100,14 +98,11 @@ public class FunctionClassifier {
                         "\"" + ctClass.getName() + "\", " +
                         "\"" + ctMethod.getName()+ "\"); }");
 
-                out.println("not static");
             } else {
                 ctMethod.insertBefore("{ Agent.TaintPropagationHandler.assertNonTaint(null, " +
                         "$args, " +
                         "\"" + ctClass.getName() + "\", " +
                         "\"" + ctMethod.getName()+ "\"); }");
-
-                out.println("static");
             }
             out.println("Sink Defined\n" );
 
@@ -123,6 +118,7 @@ public class FunctionClassifier {
             out.println("returned type: " + returnType.getName());
 
             ctMethod.insertAfter("{ Agent.TaintPropagationHandler.detaintMethodReturn($_);}");
+
             out.println("Sanitizer Defined\n" );
             return ctMethod;
         }
@@ -152,7 +148,7 @@ public class FunctionClassifier {
     public CtClass transform(CtClass ctClass, CtClass alterClass) throws NotFoundException, CannotCompileException {
 
         CtMethod ret;
-
+        //out.println("altered name transform: "+alterClass.getName());
         CtMethod[] methods = ctClass.getDeclaredMethods();
         if(methods.length >0){
             for (CtMethod method : methods) {
@@ -166,9 +162,10 @@ public class FunctionClassifier {
 
     public CtClass classSourceSinkOrSanitizer(CtClass ctClass) {
 
-        if (sinks.isClassInClasses(ctClass.getName())) {
+
+        if (sources.isClassInClasses(ctClass.getName())) {
             return ctClass;
-        } else if (sources.isClassInClasses(ctClass.getName())) {
+        } else if (sinks.isClassInClasses(ctClass.getName())) {
             return ctClass;
         } else if (sanitizers.isClassInClasses(ctClass.getName())) {
             return ctClass;
@@ -234,14 +231,64 @@ public class FunctionClassifier {
 
     public CtClass clasify(String className) throws NotFoundException, CannotCompileException {
 
-        CtClass ctClass = getCp().getOrNull(className);
+        CtClass ctClass = cp.getOrNull(className);
+
+
+        //CtClass temp, ret;
+
         if(ctClass == null){
             out.println("Cant load class: " + className);
             return ctClass;
         }
+        if(ctClass.isInterface()){
+            return null;
+        }
 
-//        else{
-//            out.println("Loaded class: " +ctClass.getName());
+        ctClass.defrost();
+        //out.println("load class: " + className);
+////                        CtMethod[] methods = ctClass.getDeclaredMethods();
+////                        for(CtMethod method : methods){
+////                            out.println("\t"+method.getName()); org.apache.tomcat.util.http.Parameters
+////                        }
+//        if(ctClass.getName().equals("org.apache.tomcat.util.http.Parameters")) {
+//
+//            try {
+//                CtMethod method = ctClass.getDeclaredMethod("getParameter");
+//
+//                method.insertAfter("{ System.out.println(\"scource activated\");}");
+//                method.insertAfter("{ System.out.println(\"" + method.getName() + "\");}");
+//                method.insertAfter("{ System.out.println($_);}");
+//                method.insertAfter("{ System.out.println($0.getClass().getName());}");
+//                out.println(ctClass.getName());
+//                out.println("\t" + method.getName());
+//                out.println("\t added!!!!");
+//            } catch (NotFoundException e) {
+//                //ignore
+//            }
+//        }
+
+        //}
+
+//
+
+
+
+
+
+        //}
+
+//        if(ctClass.getName().equals("org.apache.tomcat.util.http.Parameters")) {
+//            if(null != (temp = classSourceSinkOrSanitizer(ctClass))) {
+//                out.println("load ctclass name: "+temp.getName());
+//                ret = transform(ctClass, temp);
+//                return ret;
+//            }else if(null != (temp = classImplementsSourceSinkOrSanitizer(ctClass))){
+//                ret = transform(ctClass, temp);
+//                return ret;
+//            }else if(null != (temp = classExtendsSourceSinkOrSanitizer(ctClass))){
+//                ret  = transform(ctClass, temp);
+//                return ret;
+//            }
 //        }
 
         ctClass.defrost();

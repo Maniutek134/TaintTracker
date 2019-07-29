@@ -32,10 +32,14 @@ class ClassTransformer implements ClassFileTransformer {
         FunctionClassifier fc = new FunctionClassifier(cp);
 
         CtClass returnedClass;
+        CtClass.debugDump = "./dump";
 
         try {
             returnedClass = fc.clasify(className);
-            return returnedClass.toBytecode();
+            if(returnedClass != null){
+                return returnedClass.toBytecode();
+            }
+
         } catch (NotFoundException e) {
             e.printStackTrace();
         } catch (CannotCompileException e) {
